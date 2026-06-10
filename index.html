@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2048</title>
+<style>
+  :root {
+    --bg: #faf8ef;
+    --board-bg: #bbada0;
+    --cell-bg: rgba(238, 228, 218, 0.35);
+    --text-dark: #776e65;
+    --text-light: #f9f6f2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    color: var(--text-dark);
+  }
+  .container {
+    width: 100%;
+    max-width: 480px;
+    padding: 16px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: 48px;
+    margin: 0;
+    font-weight: bold;
+  }
+  .scores {
+    display: flex;
+    gap: 8px;
+  }
+  .score-box {
+    background: var(--board-bg);
+    color: var(--text-light);
+    border-radius: 6px;
+    padding: 8px 16px;
+    text-align: center;
+    min-width: 70px;
+  }
+  .score-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+  .score-value {
+    font-size: 22px;
+    font-weight: bold;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .instructions {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  button#new-game {
+    background: #8f7a66;
+    color: var(--text-light);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button#new-game:hover {
+    background: #9f8a76;
+  }
+  .board-wrap {
+    position: relative;
+    background: var(--board-bg);
+    border-radius: 8px;
+    padding: 8px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .cell-bg {
+    aspect-ratio: 1 / 1;
+    background: var(--cell-bg);
+    border-radius: 4px;
+  }
+  .tiles {
+    position: absolute;
+    inset: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    pointer-events: none;
+  }
+  .tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 32px;
+    font-weight: bold;
+    animation: pop 0.15s ease-in-out;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.6); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(238, 228, 218, 0.73);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-dark);
+  }
+  .hidden { display: none; }
+  .overlay button {
+    background: #8f7a66;
+    color: var(--text-light);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  /* Tile color scheme */
+  .tile-2    { background: #eee4da; color: #776e65; }
+  .tile-4    { background: #ede0c8; color: #776e65; }
+  .tile-8    { background: #f2b179; color: #f9f6f2; }
+  .tile-16   { background: #f59563; color: #f9f6f2; }
+  .tile-32   { background: #f67c5f; color: #f9f6f2; }
+  .tile-64   { background: #f65e3b; color: #f9f6f2; }
+  .tile-128  { background: #edcf72; color: #f9f6f2; font-size: 28px; }
+  .tile-256  { background: #edcc61; color: #f9f6f2; font-size: 28px; }
+  .tile-512  { background: #edc850; color: #f9f6f2; font-size: 28px; }
+  .tile-1024 { background: #edc53f; color: #f9f6f2; font-size: 24px; }
+  .tile-2048 { background: #edc22e; color: #f9f6f2; font-size: 24px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>2048</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">0</div>
+      </div>
+    </div>
+  </header>
+  <div class="toolbar">
+    <div class="instructions">Use arrow keys (or swipe) to combine tiles and reach <strong>2048</strong>!</div>
+    <button id="new-game">New Game</button>
+  </div>
+  <div class="board-wrap" id="board-wrap">
+    <div class="grid" id="grid"></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="overlay hidden" id="overlay">
+      <div id="overlay-msg">You win!</div>
+      <button id="overlay-btn">Try Again</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
